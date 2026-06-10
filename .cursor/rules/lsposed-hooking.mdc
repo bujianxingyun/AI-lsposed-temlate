@@ -1,0 +1,51 @@
+---
+description: libxposed API 100 Hook 编写规范（LSPosed）
+globs: module/app/src/**/*.java
+alwaysApply: false
+---
+
+# LSPosed Hook 规范
+
+本模板使用 **libxposed API 100**（非 Classic Xposed）。入口类继承 `XposedModule`，在构造函数中 `super(base, param)`。
+
+## 生命周期
+
+| 回调 | 用途 |
+|------|------|
+| `onPackageLoaded` | 应用进程；用 `getPackageName()` 过滤后再 Hook |
+| `onSystemServerLoaded` | system_server；scope 需含 `system` |
+
+同一进程可能加载多个包，**必须**先判断 `getPackageName()` 和 `getProcessName()`。
+
+## Hook 模式
+
+```java
+// ✅ 推荐：独立 @XposedHooker 类
+try {
+    Class<?> clazz = param.getClassLoader().loadClass("com.target.Foo");
+    Method method = clazz.getDeclaredMethod("bar", String.class);
+    hook(method, MyHooker.class);
+} catch (Throwable t) {
+    log("Hook failed", t);
+}
+
+@XposedHooker
+private static class MyHooker implements Hooker {
+    @BeforeInvocation
+    public static void before(@NonNull BeforeHookCallback cb) {
+        cb.setArg(0, "modified");
+        // cb.returnAndSkip(result);  // 跳过原方法
+    }
+}
+```
+
+## 禁止事项
+
+- ❌ 使用 `XposedHelpers`、`IXposedHookLoadPackage` 等 Classic API
+- ❌ 使用 `XResources.setReplacement`（libxposed 不支持资源替换）
+- ❌ 在 Hook 回调中抛出未捕获异常
+- ❌ 用目标 app 的 `ClassLoader` 加载模块自身类
+
+## ProGuard
+
+新增 `@XposedHooker` 类后无需改 proguard；`proguard-rules.pro` 已通配保留 `Hooker` 及 `before`/`after` 方法。

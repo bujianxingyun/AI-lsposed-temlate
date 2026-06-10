@@ -1,0 +1,38 @@
+---
+description: Android Gradle 构建与依赖约定
+globs: module/**/*.gradle
+alwaysApply: false
+---
+
+# Gradle 构建约定
+
+## 依赖
+
+libxposed 与注解库必须为 `compileOnly`：
+
+```gradle
+compileOnly 'io.github.libxposed:api:100'
+compileOnly project(":libxposed-compat")
+```
+
+❌ 不要用 `implementation` 引入 libxposed API。
+
+## SDK 与 Java
+
+- `minSdkVersion 31`，`compileSdk` / `targetSdkVersion` 默认 34，可按需调整
+- Java **21**（`sourceCompatibility` / `targetCompatibility`）
+- Release 开启 `minifyEnabled true`，依赖 `proguard-rules.pro`
+
+## 模块结构
+
+`settings.gradle` 包含 `:app` 与 `:libxposed-compat`，不要移除 compat 模块。
+
+Maven 仓库已配置阿里云镜像；libxposed 额外从 `mavenLocal()` 解析 `io.github.libxposed` 组。
+
+## 常见修改
+
+| 需求 | 修改位置 |
+|------|----------|
+| 改包名 / applicationId | `app/build.gradle` + Java 目录 + `java_init.list` |
+| 升级 libxposed API | `api:100` → 新版本，同步 `module.prop` 与 Hook 代码 |
+| 关闭混淆（调试） | `release { minifyEnabled false }`，仅临时使用 |
