@@ -9,7 +9,7 @@ description: >-
 
 # Xposed / LSPosed Module Development
 
-**This repo uses LSPosed (libxposed API 100).** Use the LSPosed section first.
+**This repo uses LSPosed (libxposed API 101).** Use the API 101 section first; API 100 is legacy.
 
 | | LSPosed | Xposed (Classic) |
 |---|---------|------------------|

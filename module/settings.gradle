@@ -15,13 +15,7 @@ dependencyResolutionManagement {
         maven { url 'https://maven.aliyun.com/repository/google' }
         google()
         mavenCentral()
-        mavenLocal {
-            content {
-                includeGroup("io.github.libxposed")
-            }
-        }
     }
 }
 rootProject.name = "XposedModuleTemplate"
 include ':app'
-include ':libxposed-compat'

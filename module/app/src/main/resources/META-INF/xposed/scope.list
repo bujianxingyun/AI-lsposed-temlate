@@ -1,5 +1,4 @@
 # 作用域列表，每行一个包名
-# 如果是系统模块，可以使用 'system'
-system
-# 例如:
-# com.android.systemui
+# Hook system_server 时使用 system
+# 示例:
+# com.example.target

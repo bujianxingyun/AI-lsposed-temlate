@@ -1,63 +1,78 @@
 package com.example.module;
 
-import android.annotation.SuppressLint;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-import io.github.libxposed.api.XposedInterface;
+import java.lang.reflect.Method;
+
 import io.github.libxposed.api.XposedModule;
-import io.github.libxposed.api.annotations.BeforeInvocation;
-import io.github.libxposed.api.annotations.XposedHooker;
 
 /**
- * 这是 Xposed 模块的入口类。
- * 客户化建议：
- * 1. 修改包名 `com.example.module` 为你自己的包名。
- * 2. 在 `onSystemServerLoaded` 或 `onPackageLoaded` 中添加你的 Hook 逻辑。
+ * Xposed 模块入口（libxposed API 101）。
+ * <p>
+ * 定制步骤：
+ * 1. 修改包名与 {@link #TARGET_PACKAGE}
+ * 2. 在 {@link #onPackageReady} 或 {@link #onSystemServerStarting} 中添加 Hook
+ * 3. 同步更新 scope.list 与 java_init.list
  */
-@SuppressLint({"PrivateApi", "BlockedPrivateApi"})
 public class MainModule extends XposedModule {
 
-    public MainModule(XposedInterface base, ModuleLoadedParam param) {
-        super(base, param);
+    private static final String TAG = "MainModule";
+
+    /** 要 Hook 的目标包名；多包场景可改为 Set 或从配置读取 */
+    private static final String TARGET_PACKAGE = "com.example.target";
+
+    @Override
+    public void onModuleLoaded(@NonNull ModuleLoadedParam param) {
+        log(Log.INFO, TAG, "loaded in " + param.getProcessName());
     }
 
     @Override
-    public void onSystemServerLoaded(@NonNull SystemServerLoadedParam param) {
-        super.onSystemServerLoaded(param);
-        // 在这里添加针对 System Server 的 Hook 逻辑
-        // 例如:
-        // try {
-        //     var classLoader = param.getClassLoader();
-        //     var clazz = classLoader.loadClass("com.android.server.wm.WindowManagerService");
-        //     // hook(method, MyHooker.class);
-        // } catch (Throwable t) {
-        //     log("Hook failed", t);
-        // }
-    }
-
-    @Override
-    public void onPackageLoaded(@NonNull PackageLoadedParam param) {
-        super.onPackageLoaded(param);
-        // 在这里添加针对特定应用的 Hook 逻辑
-        // if (param.getPackageName().equals("com.target.package")) {
-        //     // ...
-        // }
-    }
-
-    /**
-     * 这是一个简单的 Hooker 示例。
-     */
-    @XposedHooker
-    private static class ExampleHooker implements Hooker {
-        @BeforeInvocation
-        public static void before(@NonNull BeforeHookCallback callback) {
-            // 在方法执行前执行的逻辑
+    public void onPackageReady(@NonNull PackageReadyParam param) {
+        if (!matchesTarget(param)) {
+            return;
         }
 
-        // @AfterInvocation
-        // public static void after(@NonNull AfterHookCallback callback) {
-        //     // 在方法执行后执行的逻辑
-        // }
+        // 取消注释并替换为目标类/方法
+        /*
+        try {
+            Method method = param.getClassLoader()
+                    .loadClass("com.target.Foo")
+                    .getDeclaredMethod("bar", String.class);
+
+            hook(method)
+                    .setPriority(PRIORITY_DEFAULT)
+                    .setExceptionMode(ExceptionMode.PROTECTIVE)
+                    .intercept(chain -> {
+                        log(Log.INFO, TAG, "hooked: " + param.getPackageName());
+                        return chain.proceed();
+                    });
+        } catch (Throwable t) {
+            log(Log.ERROR, TAG, "Hook failed", t);
+        }
+        */
+    }
+
+    @Override
+    public void onSystemServerStarting(@NonNull SystemServerStartingParam param) {
+        // Hook system_server 时在 scope.list 中添加 system
+        /*
+        try {
+            ClassLoader cl = param.getClassLoader();
+            // Method method = ...
+            // hook(method).intercept(chain -> chain.proceed());
+        } catch (Throwable t) {
+            log(Log.ERROR, TAG, "System hook failed", t);
+        }
+        */
+    }
+
+    private static boolean matchesTarget(@NonNull PackageReadyParam param) {
+        if (!param.getPackageName().equals(TARGET_PACKAGE)) {
+            return false;
+        }
+        // 同进程多包时，建议同时校验进程名
+        return param.getProcessName().equals(TARGET_PACKAGE);
     }
 }

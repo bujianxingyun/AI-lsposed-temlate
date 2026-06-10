@@ -1,40 +1,41 @@
 ---
-description: libxposed API 100 Hook 编写规范（LSPosed）
+description: libxposed API 101 Hook 编写规范（LSPosed）
 globs: module/app/src/**/*.java
 alwaysApply: false
 ---
 
 # LSPosed Hook 规范
 
-本模板使用 **libxposed API 100**（非 Classic Xposed）。入口类继承 `XposedModule`，在构造函数中 `super(base, param)`。
+本模板使用 **libxposed API 101**。入口类继承 `XposedModule`，**无构造函数**。
 
 ## 生命周期
 
 | 回调 | 用途 |
 |------|------|
-| `onPackageLoaded` | 应用进程；用 `getPackageName()` 过滤后再 Hook |
-| `onSystemServerLoaded` | system_server；scope 需含 `system` |
+| `onModuleLoaded` | 模块加载；可读取框架信息 |
+| `onPackageLoaded` | 包进入进程（勿在此 Hook） |
+| `onPackageReady` | **应用 Hook 入口** |
+| `onSystemServerStarting` | system_server Hook；scope 需含 `system` |
 
 同一进程可能加载多个包，**必须**先判断 `getPackageName()` 和 `getProcessName()`。
 
 ## Hook 模式
 
 ```java
-// ✅ 推荐：独立 @XposedHooker 类
-try {
-    Class<?> clazz = param.getClassLoader().loadClass("com.target.Foo");
-    Method method = clazz.getDeclaredMethod("bar", String.class);
-    hook(method, MyHooker.class);
-} catch (Throwable t) {
-    log("Hook failed", t);
-}
+@Override
+public void onPackageReady(@NonNull PackageReadyParam param) {
+    if (!param.getPackageName().equals("com.target.app")) return;
+    try {
+        Method method = param.getClassLoader()
+                .loadClass("com.target.Foo")
+                .getDeclaredMethod("bar", String.class);
 
-@XposedHooker
-private static class MyHooker implements Hooker {
-    @BeforeInvocation
-    public static void before(@NonNull BeforeHookCallback cb) {
-        cb.setArg(0, "modified");
-        // cb.returnAndSkip(result);  // 跳过原方法
+        hook(method)
+                .setPriority(PRIORITY_DEFAULT)
+                .setExceptionMode(ExceptionMode.PROTECTIVE)
+                .intercept(chain -> chain.proceed());
+    } catch (Throwable t) {
+        log(Log.ERROR, TAG, "Hook failed", t);
     }
 }
 ```
@@ -42,10 +43,14 @@ private static class MyHooker implements Hooker {
 ## 禁止事项
 
 - ❌ 使用 `XposedHelpers`、`IXposedHookLoadPackage` 等 Classic API
-- ❌ 使用 `XResources.setReplacement`（libxposed 不支持资源替换）
+- ❌ 在 `onPackageLoaded` 中 Hook（应等 `onPackageReady`）
+- ❌ 使用 `XResources.setReplacement`（libxposed 不支持）
 - ❌ 在 Hook 回调中抛出未捕获异常
-- ❌ 用目标 app 的 `ClassLoader` 加载模块自身类
 
-## ProGuard
+## 调用原方法
 
-新增 `@XposedHooker` 类后无需改 proguard；`proguard-rules.pro` 已通配保留 `Hooker` 及 `before`/`after` 方法。
+```java
+getInvoker(method).setType(Invoker.Type.ORIGIN).invoke(chain.getThisObject(), args);
+```
+
+Inline 优化导致 Hook 失效时，可调用 `deoptimize(executable)`。

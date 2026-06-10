@@ -5,16 +5,16 @@ alwaysApply: true
 
 # 项目上下文
 
-本仓库是 **LSPosed / libxposed API 100** 的 Android Xposed 模块模板，Gradle 工程位于 `module/`。
+本仓库是 **LSPosed / libxposed API 101** 的 Android Xposed 模块模板，Gradle 工程位于 `module/`。
 
 ## 目录结构
 
 | 路径 | 用途 |
 |------|------|
+| `apksource/<包名>/` | 目标 app 源码或反编译代码，**只读参考**，分析 Hook 点 |
 | `module/app/src/main/java/` | 模块入口与 Hook 逻辑（`MainModule extends XposedModule`） |
 | `module/app/src/main/resources/META-INF/xposed/` | `java_init.list`、`scope.list`、`module.prop` |
-| `module/app/proguard-rules.pro` | Release 混淆规则，必须保留入口与 Hooker |
-| `module/libxposed-compat/` | `@XposedHooker` 注解兼容层 |
+| `module/app/proguard-rules.pro` | Release 混淆规则，保留入口类 |
 | `.cursor/skills/xposed-framework-api/` | 详细 API 参考，编写 Hook 时优先查阅 |
 
 ## 定制新模块时的同步修改
@@ -24,12 +24,16 @@ alwaysApply: true
 1. `module/app/build.gradle` — `namespace`、`applicationId`
 2. Java 包目录与 `MainModule.java` 的 `package` 声明
 3. `META-INF/xposed/java_init.list` — 入口类 FQCN
-4. `AndroidManifest.xml` 中的 `android:label` / `android:description`
+4. `MainModule.TARGET_PACKAGE` 与 `scope.list`
+5. `AndroidManifest.xml` 中的 `android:label` / `android:description`
 
 ## 通用原则
 
-- libxposed API 使用 `compileOnly`，**禁止**打进 APK
-- 始终用 `param.getPackageName()` / `getProcessName()` 过滤作用域
-- Hook 逻辑包在 `try/catch (Throwable)` 中，失败时 `log("...", t)`
-- 保持改动最小；不修改 `libxposed-compat` 除非注解层有需求
-- 构建命令：`module/gradlew.bat assembleRelease`（Windows）
+- libxposed API 使用 `compileOnly 'io.github.libxposed:api:101.0.1'`，**禁止**打进 APK
+- Hook 写在 `onPackageReady`（应用）或 `onSystemServerStarting`（system_server）
+- 始终用 `getPackageName()` / `getProcessName()` 过滤作用域
+- Hook 逻辑包在 `try/catch (Throwable)` 中，失败时 `log(Log.ERROR, TAG, "...", t)`
+- 日常开发用 `assembleDebug`；发布用 `assembleRelease`
+- Maven 仓库使用阿里云镜像（见 `settings.gradle`）
+- 构建命令：`module/gradlew.bat assembleDebug`（Windows）
+- 分析目标 app 时优先查阅 `apksource/<包名>/`；勿将 apksource 中的类编入模块 APK
