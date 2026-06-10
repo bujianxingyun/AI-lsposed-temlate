@@ -18,8 +18,8 @@ compileOnly 'io.github.libxposed:api:101.0.1'
 
 ## SDK 与 Java
 
-- `minSdk 26`，`compileSdk` / `targetSdk` 默认 35
-- Java **21**（`sourceCompatibility` / `targetCompatibility`）
+- `minSdk 26`，`compileSdk` / `targetSdk` 默认 34
+- Java **17**（`sourceCompatibility` / `targetCompatibility`）
 - `debug`：`minifyEnabled false`（日常开发）
 - `release`：`minifyEnabled true` + `proguard-rules.pro`
 
@@ -29,7 +29,7 @@ Maven 使用阿里云镜像（`settings.gradle`），libxposed 从 Maven Central
 
 ## 版本
 
-- AGP **8.7.3**，Gradle **8.9**（Wrapper 使用阿里云 `mirrors.aliyun.com/gradle/distributions` 镜像）
+- AGP **8.2.2**，Gradle **8.4**（与 Android Studio 兼容；Wrapper 使用阿里云镜像）
 - 升级 libxposed 时同步修改 `module.prop` 与 Hook 代码
 
 ## 常见修改

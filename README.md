@@ -3,7 +3,7 @@
 基于 [libxposed](https://github.com/libxposed/api) 的 **LSPosed Xposed 模块** 模板，并预置 Cursor 规则与 Skill，便于在 AI 辅助下快速开发 Hook 模块。
 
 - **框架**：LSPosed（libxposed API 101）
-- **语言**：Java 21
+- **语言**：Java 17
 - **最低 Android 版本**：API 26
 - **Gradle 工程目录**：[`module/`](module/)
 
@@ -26,6 +26,7 @@
     │   ├── proguard-rules.pro
     │   └── src/main/
     │       ├── java/com/example/module/MainModule.java
+    │       ├── res/drawable/ic_module_icon.png  # 模块图标（可直接替换）
     │       ├── res/values/strings.xml
     │       └── resources/META-INF/xposed/
     │           ├── java_init.list
@@ -39,8 +40,8 @@
 
 ### 环境要求
 
-- JDK 21
-- Android SDK（compileSdk 35）
+- JDK 17（与 Android Studio + AGP 8.2.2 兼容）
+- Android SDK（compileSdk 34）
 - 已安装 [LSPosed](https://github.com/LSPosed/LSPosed) 的 Root 设备或模拟器
 
 ### 构建
@@ -94,7 +95,7 @@ Release APK：`module/app/build/outputs/apk/release/`
 - libxposed 依赖：`compileOnly 'io.github.libxposed:api:101.0.1'`（已从 Maven Central 解析，无需 mavenLocal）
 - Maven 仓库默认使用**阿里云镜像**（见 `module/settings.gradle`）
 - Hook 应写在 `onPackageReady`，不要在 `onPackageLoaded` 中 Hook
-- 同进程多包场景务必校验 `getPackageName()` 与 `getProcessName()`
+- 同进程多包场景务必校验 `getPackageName()`；进程名勿在 `PackageReadyParam` 上调用 `getProcessName()`（应使用 `getApplicationInfo().processName`）
 
 ## 参考链接
 

@@ -72,7 +72,9 @@ public class MainModule extends XposedModule {
         if (!param.getPackageName().equals(TARGET_PACKAGE)) {
             return false;
         }
-        // 同进程多包时，建议同时校验进程名
-        return param.getProcessName().equals(TARGET_PACKAGE);
+        // getProcessName() 仅在 ModuleLoadedParam 上；此处用 ApplicationInfo.processName
+        // 同进程多包时避免误 Hook 非目标包；多进程组件（如 :push）请按需调整判断逻辑
+        String processName = param.getApplicationInfo().processName;
+        return TARGET_PACKAGE.equals(processName);
     }
 }

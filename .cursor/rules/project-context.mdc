@@ -31,7 +31,7 @@ alwaysApply: true
 
 - libxposed API 使用 `compileOnly 'io.github.libxposed:api:101.0.1'`，**禁止**打进 APK
 - Hook 写在 `onPackageReady`（应用）或 `onSystemServerStarting`（system_server）
-- 始终用 `getPackageName()` / `getProcessName()` 过滤作用域
+- 始终用 `getPackageName()` 过滤；进程名见 `ModuleLoadedParam.getProcessName()` 或 `getApplicationInfo().processName`
 - Hook 逻辑包在 `try/catch (Throwable)` 中，失败时 `log(Log.ERROR, TAG, "...", t)`
 - 日常开发用 `assembleDebug`；发布用 `assembleRelease`
 - Maven 仓库使用阿里云镜像（见 `settings.gradle`）

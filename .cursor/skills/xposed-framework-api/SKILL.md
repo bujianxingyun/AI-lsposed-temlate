@@ -45,7 +45,7 @@ Name/description via `android:label` / `android:description`.
 
 ### Scope
 
-Always filter by `getPackageName()` and `getProcessName()` — callbacks may fire for other packages in the same process.
+Always filter by `getPackageName()` — callbacks may fire for other packages in the same process. `getProcessName()` is on `ModuleLoadedParam` only; in `onPackageReady` use `getApplicationInfo().processName`.
 
 - `system` — virtual package for system_server
 - `android` — valid (some components run outside system_server)

@@ -12,6 +12,7 @@
 ## 2. 模块信息
 
 - [ ] `app/src/main/res/values/strings.xml` — 修改 `app_name`、`xposed_description`
+- [ ] `app/src/main/res/drawable/ic_module_icon.png` — 替换模块图标（见 [module-icon.md](module-icon.md)）
 - [ ] `app/build.gradle` — 按需调整 `versionCode`、`versionName`
 
 ## 3. Hook 目标
@@ -40,5 +41,5 @@
 |------|------|------|
 | 模块未加载 | `java_init.list` 类名错误 | 核对 FQCN |
 | Hook 不生效 | 未过滤包名/进程名 | 使用 `matchesTarget` 模式 |
-| 构建失败 | JDK 版本不对 | 使用 JDK 21 |
+| 构建失败 | JDK 版本不对 | 使用 JDK 17 |
 | 混淆后崩溃 | ProGuard 规则缺失 | 检查 `proguard-rules.pro` |

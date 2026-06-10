@@ -18,5 +18,6 @@ Android 工程位于本目录。完整说明见仓库根目录 [README.md](../RE
 | `app/src/main/resources/META-INF/xposed/scope.list` | 作用域 |
 | `app/src/main/resources/META-INF/xposed/java_init.list` | 入口类 |
 | `app/build.gradle` | 包名与 SDK 版本 |
+| `app/src/main/res/drawable/ic_module_icon.png` | 模块图标 |
 
 详细步骤：[docs/customization.md](../docs/customization.md)

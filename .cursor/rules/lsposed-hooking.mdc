@@ -17,7 +17,7 @@ alwaysApply: false
 | `onPackageReady` | **应用 Hook 入口** |
 | `onSystemServerStarting` | system_server Hook；scope 需含 `system` |
 
-同一进程可能加载多个包，**必须**先判断 `getPackageName()` 和 `getProcessName()`。
+同一进程可能加载多个包，**必须**先判断 `getPackageName()`；进程名用 `onModuleLoaded` 的 `ModuleLoadedParam.getProcessName()` 或 `PackageLoadedParam.getApplicationInfo().processName`（`PackageReadyParam` 无 `getProcessName()`）。
 
 ## Hook 模式
 
