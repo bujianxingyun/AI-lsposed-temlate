@@ -5,35 +5,57 @@ alwaysApply: true
 
 # 项目上下文
 
-本仓库是 **LSPosed / libxposed API 101** 的 Android Xposed 模块模板，Gradle 工程位于 `module/`。
+本仓库是 **LSPosed / libxposed API 101** 模块模板，Gradle 工程在 `module/`。Hook API 细节查阅 `.cursor/skills/libxposed-api/SKILL.md`。
 
-## 目录结构
+**网上多数教程是旧版 Xposed（Classic API），禁止照搬或与本项目混用。**
+
+## 仅用 libxposed API
+
+- 依赖：`io.github.libxposed:api`（`compileOnly`），包名 `io.github.libxposed.api.*`
+- 入口：`extends XposedModule`，注册于 `META-INF/xposed/java_init.list`
+- Hook 点：`onPackageReady` / `onSystemServerStarting`，使用 `hook(method).intercept(...)` 与 `getInvoker()`
+- 配置：`getRemotePreferences()` / `openRemoteFile()`；模块 UI 用 `io.github.libxposed.service.XposedService`
+
+## 禁止 Classic Xposed API
+
+不得出现以下 import、类或写法（即便教程里常见）：
+
+| 禁止 | 本项目用法 |
+|------|------------|
+| `de.robv.android.xposed.*` | `io.github.libxposed.api.*` |
+| `implements IXposedHookLoadPackage` | `extends XposedModule` |
+| `handleLoadPackage` / `XC_LoadPackage` | `onPackageReady` |
+| `XposedHelpers.findAndHookMethod` | `hook(method).intercept(chain -> ...)` |
+| `XC_MethodHook` / `XC_MethodReplacement` | 拦截链 `chain.proceed()` |
+| `XposedBridge.log` | `log(Log.LEVEL, TAG, msg)` |
+| `XSharedPreferences` | `getRemotePreferences()` |
+| `XResources` / 资源替换 | 不支持 |
+| `assets/xposed_init` | `META-INF/xposed/java_init.list` |
+| `api` / `xposed-api` 等 Classic 依赖 | `libs.libxposed.api` |
+
+编写或改写 Hook 代码前，先确认 import 与 API 属于 libxposed；从旧教程迁移时整体替换模式，不要两套 API 并存。
+
+## 目录
 
 | 路径 | 用途 |
 |------|------|
-| `apksource/<包名>/` | 目标 app 源码或反编译代码，**只读参考**，分析 Hook 点 |
-| `module/app/src/main/java/` | 模块入口与 Hook 逻辑（`MainModule extends XposedModule`） |
+| `apksource/<包名>/` | 目标 app 反编译代码，**只读参考** |
+| `module/app/src/main/java/` | `ModuleMain` 入口与可选 UI |
 | `module/app/src/main/resources/META-INF/xposed/` | `java_init.list`、`scope.list`、`module.prop` |
-| `module/app/proguard-rules.pro` | Release 混淆规则，保留入口类 |
-| `.cursor/skills/xposed-framework-api/` | 详细 API 参考，编写 Hook 时优先查阅 |
 
-## 定制新模块时的同步修改
+## 改包名须同步
 
-修改包名时，以下文件必须保持一致：
+1. `module/app/build.gradle.kts` — `namespace`、`applicationId`
+2. 源码包目录与 `package` 声明
+3. `java_init.list` 入口 FQCN
+4. `scope.list` 与 `onPackageReady` 中的 `getPackageName()` 过滤
+5. `AndroidManifest.xml` — `android:label`、`android:description`
 
-1. `module/app/build.gradle` — `namespace`、`applicationId`
-2. Java 包目录与 `MainModule.java` 的 `package` 声明
-3. `META-INF/xposed/java_init.list` — 入口类 FQCN
-4. `MainModule.TARGET_PACKAGE` 与 `scope.list`
-5. `AndroidManifest.xml` 中的 `android:label` / `android:description`
+## apksource
 
-## 通用原则
+- 在此分析类名、方法签名；**禁止**将 apksource 中的类编入模块 APK
+- Hook 用 `param.getClassLoader().loadClass(...)` 按字符串加载
 
-- libxposed API 使用 `compileOnly 'io.github.libxposed:api:101.0.1'`，**禁止**打进 APK
-- Hook 写在 `onPackageReady`（应用）或 `onSystemServerStarting`（system_server）
-- 始终用 `getPackageName()` 过滤；进程名见 `ModuleLoadedParam.getProcessName()` 或 `getApplicationInfo().processName`
-- Hook 逻辑包在 `try/catch (Throwable)` 中，失败时 `log(Log.ERROR, TAG, "...", t)`
-- 日常开发用 `assembleDebug`；发布用 `assembleRelease`
-- Maven 仓库使用阿里云镜像（见 `settings.gradle`）
-- 构建命令：`module/gradlew.bat assembleDebug`（Windows）
-- 分析目标 app 时优先查阅 `apksource/<包名>/`；勿将 apksource 中的类编入模块 APK
+## 构建
+
+`module/gradlew.bat assembleDebug`（Windows）/ `./gradlew assembleDebug`

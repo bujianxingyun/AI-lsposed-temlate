@@ -3,7 +3,7 @@
 基于 [libxposed](https://github.com/libxposed/api) 的 **LSPosed Xposed 模块** 模板，并预置 Cursor 规则与 Skill，便于在 AI 辅助下快速开发 Hook 模块。
 
 - **框架**：LSPosed（libxposed API 101）
-- **语言**：Java 17
+- **语言**：Java 21 + Kotlin
 - **最低 Android 版本**：API 26
 - **Gradle 工程目录**：[`module/`](module/)
 
@@ -13,51 +13,41 @@
 .
 ├── README.md
 ├── LICENSE
-├── .github/workflows/build.yml        # CI 构建
+├── .github/workflows/build.yml
 ├── .cursor/
-│   ├── rules/                         # Cursor AI 项目规则
-│   └── skills/xposed-framework-api/   # Xposed / LSPosed API 参考
-├── docs/customization.md              # 定制清单
-├── apksource/                         # 目标 app 源码/反编译代码（只读参考，不参与编译）
-│   └── README.md
-└── module/                            # Android Gradle 工程
+│   ├── rules/
+│   └── skills/libxposed-api/
+├── apksource/                 # 目标 app 反编译代码（只读参考）
+└── module/
     ├── app/
-    │   ├── build.gradle
+    │   ├── build.gradle.kts
     │   ├── proguard-rules.pro
     │   └── src/main/
-    │       ├── java/com/example/module/MainModule.java
-    │       ├── res/drawable/ic_module_icon.png  # 模块图标（可直接替换）
-    │       ├── res/values/strings.xml
+    │       ├── java/io/github/libxposed/example/
+    │       ├── res/
     │       └── resources/META-INF/xposed/
-    │           ├── java_init.list
-    │           ├── scope.list
-    │           └── module.prop
-    ├── gradlew / gradlew.bat
-    └── README.md
+    ├── gradle/libs.versions.toml
+    ├── settings.gradle.kts
+    └── gradlew / gradlew.bat
 ```
 
 ## 快速开始
 
 ### 环境要求
 
-- JDK 17（与 Android Studio + AGP 8.2.2 兼容）
-- Android SDK（compileSdk 34）
+- JDK 21
+- Android SDK（compileSdk 36）
 - 已安装 [LSPosed](https://github.com/LSPosed/LSPosed) 的 Root 设备或模拟器
 
 ### 构建
 
 ```bash
 cd module
-./gradlew assembleDebug          # 日常开发（无混淆）
-./gradlew assembleRelease        # 发布（开启 R8 混淆）
+./gradlew assembleDebug
+./gradlew assembleRelease
 ```
 
-Windows：
-
-```bat
-cd module
-gradlew.bat assembleDebug
-```
+Windows：`gradlew.bat assembleDebug`
 
 Release APK：`module/app/build/outputs/apk/release/`
 
@@ -65,37 +55,37 @@ Release APK：`module/app/build/outputs/apk/release/`
 
 ## 定制模块
 
-完整清单见 [docs/customization.md](docs/customization.md)。核心步骤：
+1. 修改 `app/build.gradle.kts` 中的 `namespace`、`applicationId`
+2. 重命名 `app/src/main/java/io/github/libxposed/example/` 包目录，同步 `package` 声明
+3. 更新 `java_init.list` 入口类 FQCN
+4. 在 `scope.list` 添加目标包名，在 `ModuleMain` 的 `onPackageReady` 中过滤并实现 Hook
+5. 修改 `AndroidManifest.xml` 的 `android:label`、`android:description`
+6. 将目标 app 反编译结果放入 `apksource/<包名>/` 供分析（不参与编译）
 
-1. 修改 `app/build.gradle` 中的 `namespace` 和 `applicationId`
-2. 重命名 `app/src/main/java/com/example/module` 包目录
-3. 在 `MainModule.java` 中设置 `TARGET_PACKAGE` 并实现 `onPackageReady` / `onSystemServerStarting`
-4. 更新 `java_init.list`、`scope.list`、`strings.xml`
-5. 按需调整 `compileSdk` / `targetSdk`
-6. 将目标 app 源码或反编译结果放入 [`apksource/`](apksource/)（见 [apksource/README.md](apksource/README.md)）
+Hook system_server 时：`scope.list` 添加 `system`，逻辑写在 `onSystemServerStarting`。
 
 ## 主要文件说明
 
 | 文件 | 说明 |
 |------|------|
-| `MainModule.java` | 模块入口，API 101 生命周期 |
+| `ModuleMain.java` | Xposed 入口，API 101 生命周期 |
+| `App.kt` / `MainActivity.kt` | 模块 UI，`XposedService` 演示 |
 | `java_init.list` | libxposed 入口类 FQCN |
-| `scope.list` | 默认作用域（`staticScope=false` 可在 LSPosed 中扩展） |
+| `scope.list` | 默认作用域 |
 | `module.prop` | libxposed 元数据 |
 | `proguard-rules.pro` | Release 混淆保留规则 |
-| `apksource/<包名>/` | 目标 app 参考代码，用于分析 Hook 点（不参与编译） |
+| `apksource/<包名>/` | 目标 app 参考代码（不参与编译） |
 
 ## 使用 Cursor / AI 开发
 
-- **Rules**（`.cursor/rules/`）：项目结构、API 101 Hook 规范、Gradle 约定、`apksource` 目标 app 分析规范
-- **Skill**（`.cursor/skills/xposed-framework-api/`）：LSPosed 与 Classic Xposed API 对照
+- **Rule**（`.cursor/rules/project-context.mdc`）：项目结构与定制流程
+- **Skill**（`.cursor/skills/libxposed-api/`）：libxposed API 参考
 
 ## 注意事项
 
-- libxposed 依赖：`compileOnly 'io.github.libxposed:api:101.0.1'`（已从 Maven Central 解析，无需 mavenLocal）
-- Maven 仓库默认使用**阿里云镜像**（见 `module/settings.gradle`）
-- Hook 应写在 `onPackageReady`，不要在 `onPackageLoaded` 中 Hook
-- 同进程多包场景务必校验 `getPackageName()`；进程名勿在 `PackageReadyParam` 上调用 `getProcessName()`（应使用 `getApplicationInfo().processName`）
+- libxposed API 使用 `compileOnly`，**禁止**打进 APK
+- Hook 写在 `onPackageReady`，不要在 `onPackageLoaded` 中 Hook
+- 同进程多包场景务必校验 `getPackageName()`
 
 ## 参考链接
 

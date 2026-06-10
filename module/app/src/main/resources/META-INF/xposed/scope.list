@@ -1,4 +1,1 @@
-# 作用域列表，每行一个包名
-# Hook system_server 时使用 system
-# 示例:
-# com.example.target
+com.android.settings
