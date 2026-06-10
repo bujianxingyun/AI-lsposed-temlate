@@ -1,0 +1,70 @@
+---
+description: 公众网 Toast 与加载遮罩规范。涉及操作反馈、提交、查询、异步请求时遵循。
+globs: src/**/*.{vue,js}
+alwaysApply: false
+---
+
+# Toast 与加载遮罩
+
+参考：`design/公众网全局提示规范.md` 第二、三章
+
+## Toast 适用场景
+
+- 添加/删除/保存成功 → `showToast('添加成功', 'success')`
+- 业务警告（如前置条件未满足）→ `showToast('请先填写企业名称', 'warning')`
+- 过程信息 → `showToast('提交中...', 'info')`（短暂提示，非长时 loading）
+
+## Toast 规范
+
+```javascript
+import { showToast } from '@/utils/feedback'
+
+showToast('保存成功', 'success')           // 默认 2000ms
+showToast('请先填写必填项', 'warning')
+showToast('提交中...', 'info', 1500)
+```
+
+视觉要求：
+
+- 固定顶部居中，初始 `top: -60px`，显示时 `top: 20px`
+- 圆角 6px，padding `14px 28px`，字号 15px，白色文字
+- 按 type 使用对应渐变背景（见总规范色值）
+- 动画：`transition: top 0.3s ease, opacity 0.3s ease`
+
+**禁止**用 `Message.success()` / `this.$message()` 处理业务操作成功反馈。
+
+## 加载遮罩适用场景
+
+点击查询、提交表单、跳转前需等待接口返回的操作。
+
+```javascript
+import { showLoading, hideLoading, showToast } from '@/utils/feedback'
+
+async handleSubmit() {
+  if (!this.validateForm()) return
+
+  showLoading('提交中...')
+  try {
+    await submitApi(this.form)
+    hideLoading()
+    showToast('提交成功', 'success')
+  } catch (e) {
+    hideLoading()
+    showToast('提交失败，请重试', 'warning')
+  }
+}
+```
+
+遮罩规范：
+
+- 全屏 `position: fixed`，白色半透明背景
+- 居中 spinner（40px，顶部色 `--primary-color` 或项目主色）+ 下方提示文字（14px）
+- `showLoading` 后必须配对 `hideLoading`（含 `catch`、`finally`）
+- loading 期间禁用触发按钮，防止重复提交
+
+**禁止**在提交/查询场景仅用 `this.$loading({ lock: true })` 而不符合设计稿视觉；存量代码改造时替换为规范遮罩。
+
+## 与 httpService 的分工
+
+- `src/utils/httpService.js` 拦截器：仅处理登录过期等全局异常
+- 页面级业务结果（成功/失败/警告）：由页面调用 `showToast`，不在拦截器里统一弹成功提示

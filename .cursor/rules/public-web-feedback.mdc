@@ -1,0 +1,53 @@
+---
+description: 公众网全局提示规范总览。涉及表单验证、Toast、加载遮罩、骨架屏等交互反馈时遵循本规范。
+alwaysApply: true
+---
+
+# 公众网全局提示规范（Vue 实现）
+
+> 设计规范原文：`design/公众网全局提示规范.md`
+> 原型参考：`design/以旧换新/developer-form.html`、`design/components/common.css`、`design/components/common.js`
+> 生效范围：所有已存在页面、新增页面
+
+本项目为 **Vue 2 + Element UI** 公众网 PC 端。实现时必须还原设计规范的**视觉效果与交互行为**，不得随意改用 Element UI 默认样式替代。
+
+## 场景选型（必须遵守）
+
+| 场景 | 规范方案 | 禁止 |
+|------|----------|------|
+| 表单字段未填/未选 | 红色边框 `#F44336` + 字段下方 12px 红字 | 仅用 `Message` 弹顶部提示代替字段级错误 |
+| 操作成功/警告/信息反馈 | 顶部居中 Toast（success / warning / info） | 滥用 `alert`、`Notification`、Element 默认 Message 样式 |
+| 提交/查询等待接口 | 全屏白色半透明遮罩 + 旋转 spinner + 文案 | 无遮罩的裸按钮 loading（无法防重复点击） |
+| 列表页首屏加载 | 骨架屏占位（3–5 条） | 空白页、`v-loading` 整页遮罩代替骨架屏 |
+
+## 公共能力（优先复用，勿重复造轮子）
+
+新增或改造交互反馈时，优先使用/扩展以下模块（若不存在则先创建再使用）：
+
+- `src/utils/feedback.js` — `showToast`、`showLoading`、`hideLoading`、`showFieldError`、`clearFieldError`
+- `src/assets/style/feedback.scss` — 规范中的 `.form-error-message`、`.toast`、`.loading-overlay`、`.skeleton*` 样式
+- `src/components/feedback/Toast.vue` — 全局 Toast 容器（挂载于 `App.vue`）
+- `src/components/feedback/LoadingOverlay.vue` — 全局加载遮罩
+- `src/components/feedback/SkeletonHouseCard.vue` / `SkeletonListItem.vue` — 骨架屏组件
+
+样式数值以 `design/公众网全局提示规范.md` 为准，关键色值：
+
+- 错误色：`#F44336`
+- Toast success：`linear-gradient(135deg, #4CAF50 0%, #45A049 100%)`
+- Toast warning：`linear-gradient(135deg, #FF9800 0%, #F57C00 100%)`
+- Toast info：`linear-gradient(135deg, #2196F3 0%, #1976D2 100%)`
+- 加载遮罩背景：`rgba(255, 255, 255, 0.9)`，z-index：`9998`
+- Toast z-index：`10000`
+
+## 改造存量代码的原则
+
+- 现有 `Message({ type: 'warning' })`、`this.$loading()` 等 Element UI 用法，在**触达该文件时**逐步替换为规范方案
+- 登录过期等全局拦截（如 `src/utils/httpService.js`）可暂保留 `Message`，但业务操作反馈必须走 Toast 规范
+- 修改范围最小化：只改与提示/加载相关的逻辑，不顺手重构无关代码
+
+## 通用要求
+
+1. **一致性**：同类型交互在全站使用同一套组件/工具函数
+2. **防重复提交**：`showLoading` 期间禁用提交按钮或阻止重复触发
+3. **可访问性**：错误提示与表单字段关联（`aria-describedby` 或 Element 表单 error slot）
+4. **性能**：骨架屏动画轻量，列表页渲染 3–5 条骨架项即可
